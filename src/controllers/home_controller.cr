@@ -2,7 +2,7 @@ class HomeController < ApplicationController
   before_action do
     only [:room, :join_room] do
       if @@rooms[params[:room_id]]?.nil?
-        halt!(404)
+        halt!(404, "Room doesn't exists")
       end
     end
   end
@@ -45,13 +45,13 @@ class HomeController < ApplicationController
   def room
     player_id = session[:player_id]
     room = @@rooms[params[:room_id]]
-    halt!(401, "") if @@users[player_id]?.nil? || !room.includes?((player_id || 0).to_u64)
+    halt!(401, "Player not in room") if @@users[player_id]?.nil? || !room.includes?((player_id || 0).to_u64)
     room.to_json
   end
 
   def join_room
     room_id = params[:room_id]
-    @@rooms[room_id].players.add(get_user)
+    @@rooms[room_id].push(get_user)
 
     subscribers = Amber::WebSockets::ClientSockets
       .get_subscribers_for_topic("cuarenta_room:#{room_id}")
